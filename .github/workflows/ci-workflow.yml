@@ -1,0 +1,28 @@
+name: Continuous Integration
+on:
+  pull_request:
+    branches: [main]                      
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest      
+    steps:
+    - uses: actions/checkout@v2
+    - name: build
+      run: dotnet build
+
+    - name: dotnet test
+      run: dotnet test
+
+    - name: install npm dependencies
+      working-directory: DotnetTemplate.Web
+      run: npm install
+    
+    - name: npm test
+      working-directory: DotnetTemplate.Web
+      run: npm t
+    
+    - name: npm linting
+      working-directory: DotnetTemplate.Web
+      run: npm run lint
