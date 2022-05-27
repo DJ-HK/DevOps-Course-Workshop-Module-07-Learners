@@ -1,0 +1,65 @@
+name: Continuous Integration
+on:
+  pull_request:
+    branches: [main]                      
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest      
+    steps:
+    - uses: actions/checkout@v2 # Adds a step to checkout the repository code
+    - name: build
+      run: dotnet build
+
+    - name: dotnet test
+      run: dotnet test
+
+    - name: install npm dependencies
+      working-directory: DotnetTemplate.Web
+      run: npm install
+    
+    - name: npm test
+      working-directory: DotnetTemplate.Web
+      run: npm t
+    
+    - name: npm linting
+      working-directory: DotnetTemplate.Web
+      run: npm run lint
+      
+name: Slack Notifications
+on:
+  workflow_run:
+    workflows: [Continuous Integration]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  on-success: 
+    name: Slack notification
+    runs-on: ubuntu-latest
+    environment: "Build & Test"
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Slack Notification Build & Test
+      uses: bryannice/gitactions-slack-notification@2.0.0
+      env:
+        SLACK_INCOMING_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        SLACK_MESSAGE: 'Dotnet Build Successful'
+        SLACK_TITLE: 'Dotnet Build and Test Successful'
+
+
+  on-failure:
+    name: Slack notification
+    runs-on: ubuntu-latest
+    environment: "Build & Test"
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Slack Notification Build & Test
+      uses: bryannice/gitactions-slack-notification@2.0.0
+      env:
+        SLACK_INCOMING_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        SLACK_MESSAGE: 'Dotnet Build Failed'
+        SLACK_TITLE: 'Dotnet Build and Test Failed'
